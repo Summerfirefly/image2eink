@@ -51,7 +51,7 @@ int load_image_data_linear(const char *path, double *out_image_data, size_t targ
     }
 
     if (resize_w == target_width) {
-        int start_offset = resize_w * (target_height - resize_h) / 2 * 3;
+        int start_offset = resize_w * ((target_height - resize_h) / 2) * 3;
         for (int i = 0; i < resize_w * resize_h * 3; ++i) {
             out_image_data[start_offset + i] = convert_srgb_to_linear(temp_image_data[i]);
         }
