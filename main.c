@@ -7,10 +7,12 @@
 
 #include "i2e_image_handler.h"
 #include "i2e_options.h"
+#include "i2e_pallette.h"
 #include "i2e_utils.h"
 
 int main(int argc, char *argv[]) {
     const char *out_suffix = "_out.bmp";
+    init_pallette();
 
     for (int i = 1; i < argc; ++i) {
         if (is_filename_suffix_eq(argv[i], out_suffix)) {

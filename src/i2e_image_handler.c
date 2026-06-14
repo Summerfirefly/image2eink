@@ -1,19 +1,10 @@
 #include "i2e_image_handler.h"
 
-#include "stb_import.h"
 #include <stddef.h>
 #include <stdio.h>
 
-unsigned char pallette[6][3] = {{0, 0, 0}, {255, 255, 255}, {255, 0, 0}, {0, 255, 0}, {0, 0, 255}, {255, 255, 0}};
-
-double convert_srgb_to_linear(unsigned char srgb_value) {
-    double srgb = srgb_value / 255.0;
-    if (srgb <= 0.04045) {
-        return srgb / 12.92;
-    } else {
-        return pow((srgb + 0.055) / 1.055, 2.4);
-    }
-}
+#include "i2e_pallette.h"
+#include "stb_import.h"
 
 int load_image_data_linear(const char *path, double *out_image_data, size_t target_width, size_t target_height) {
     if (out_image_data == NULL) {
@@ -47,7 +38,7 @@ int load_image_data_linear(const char *path, double *out_image_data, size_t targ
     }
 
     for (size_t i = 0; i < target_width * target_height * 3; ++i) {
-        out_image_data[i] = convert_srgb_to_linear(255);
+        out_image_data[i] = 1.0;
     }
 
     if (resize_w == target_width) {
@@ -94,9 +85,9 @@ int floyd_steinberg_dither_linear(const double *const in_linear_data, unsigned c
             out_srgb_data[pixel_data_pos + 1] = pallette[new_pixel_index][1];
             out_srgb_data[pixel_data_pos + 2] = pallette[new_pixel_index][2];
 
-            double r_err = r - convert_srgb_to_linear(pallette[new_pixel_index][0]);
-            double g_err = g - convert_srgb_to_linear(pallette[new_pixel_index][1]);
-            double b_err = b - convert_srgb_to_linear(pallette[new_pixel_index][2]);
+            double r_err = r - pallette_linear[new_pixel_index][0];
+            double g_err = g - pallette_linear[new_pixel_index][1];
+            double b_err = b - pallette_linear[new_pixel_index][2];
 
             int tmp_x = x + x_step;
             int tmp_y = y;
@@ -144,9 +135,9 @@ int get_closest_color_index_linear(double r, double g, double b) {
     int closest_idx = -1;
     double closest_dis = -1.0;
     for (int i = 0; i < 6; ++i) {
-        double dr = r - convert_srgb_to_linear(pallette[i][0]);
-        double dg = g - convert_srgb_to_linear(pallette[i][1]);
-        double db = b - convert_srgb_to_linear(pallette[i][2]);
+        double dr = r - pallette_linear[i][0];
+        double dg = g - pallette_linear[i][1];
+        double db = b - pallette_linear[i][2];
         double distance = dr * dr + dg * dg + db * db;
         if (closest_dis < 0 || distance < closest_dis) {
             closest_dis = distance;
