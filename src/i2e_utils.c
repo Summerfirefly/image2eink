@@ -38,7 +38,7 @@ int get_base_dir_name(const char *path, char *out_dirname, size_t dirname_length
     return 0;
 }
 
-int is_file_extension_eq(const char *path, const char *extension) {
+int is_filename_suffix_eq(const char *path, const char *extension) {
     if (path == NULL || extension == NULL) {
         return 0;
     }

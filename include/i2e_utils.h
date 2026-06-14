@@ -5,6 +5,6 @@
 
 int get_base_dir_name(const char *path, char *out_dirname, size_t dirname_length, char *out_basename,
                       size_t basename_length);
-int is_file_extension_eq(const char *path, const char *extension);
+int is_filename_suffix_eq(const char *path, const char *extension);
 
 #endif /* I2E_UTILS_H */
