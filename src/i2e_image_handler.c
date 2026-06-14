@@ -82,7 +82,8 @@ int floyd_steinberg_dither_linear(const double *const in_linear_data, unsigned c
     }
 
     for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
+        int x_step = y % 2 == 0 ? 1 : -1;
+        for (int x = x_step > 0 ? 0 : width - 1; x < width && x >= 0; x += x_step) {
             int pixel_data_pos = (width * y + x) * 3;
             double r = in_linear_data[pixel_data_pos] + tmp_linear_data[pixel_data_pos];
             double g = in_linear_data[pixel_data_pos + 1] + tmp_linear_data[pixel_data_pos + 1];
@@ -97,18 +98,18 @@ int floyd_steinberg_dither_linear(const double *const in_linear_data, unsigned c
             double g_err = g - convert_srgb_to_linear(pallette[new_pixel_index][1]);
             double b_err = b - convert_srgb_to_linear(pallette[new_pixel_index][2]);
 
-            int tmp_x = x + 1;
+            int tmp_x = x + x_step;
             int tmp_y = y;
-            if (tmp_x < width) {
+            if (tmp_x < width && tmp_x >= 0) {
                 pixel_data_pos = (width * tmp_y + tmp_x) * 3;
                 tmp_linear_data[pixel_data_pos] += r_err * 7 / 16;
                 tmp_linear_data[pixel_data_pos + 1] += g_err * 7 / 16;
                 tmp_linear_data[pixel_data_pos + 2] += b_err * 7 / 16;
             }
 
-            tmp_x = x - 1;
+            tmp_x = x - x_step;
             tmp_y = y + 1;
-            if (tmp_x >= 0 && tmp_y < height) {
+            if (tmp_x < width && tmp_x >= 0 && tmp_y < height) {
                 pixel_data_pos = (width * tmp_y + tmp_x) * 3;
                 tmp_linear_data[pixel_data_pos] += r_err * 3 / 16;
                 tmp_linear_data[pixel_data_pos + 1] += g_err * 3 / 16;
@@ -124,9 +125,9 @@ int floyd_steinberg_dither_linear(const double *const in_linear_data, unsigned c
                 tmp_linear_data[pixel_data_pos + 2] += b_err * 5 / 16;
             }
 
-            tmp_x = x + 1;
+            tmp_x = x + x_step;
             tmp_y = y + 1;
-            if (tmp_x < width && tmp_y < height) {
+            if (tmp_x < width && tmp_x >= 0 && tmp_y < height) {
                 pixel_data_pos = (width * tmp_y + tmp_x) * 3;
                 tmp_linear_data[pixel_data_pos] += r_err * 1 / 16;
                 tmp_linear_data[pixel_data_pos + 1] += g_err * 1 / 16;
