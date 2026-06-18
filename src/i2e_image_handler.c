@@ -80,13 +80,13 @@ int floyd_steinberg_dither_linear(const double *const in_linear_data, unsigned c
             double b = in_linear_data[pixel_data_pos + 2] + tmp_linear_data[pixel_data_pos + 2];
             int new_pixel_index = get_closest_color_index_linear(r, g, b);
 
-            out_srgb_data[pixel_data_pos] = pallette[new_pixel_index][0];
-            out_srgb_data[pixel_data_pos + 1] = pallette[new_pixel_index][1];
-            out_srgb_data[pixel_data_pos + 2] = pallette[new_pixel_index][2];
+            out_srgb_data[pixel_data_pos] = pallette[new_pixel_index].r;
+            out_srgb_data[pixel_data_pos + 1] = pallette[new_pixel_index].g;
+            out_srgb_data[pixel_data_pos + 2] = pallette[new_pixel_index].b;
 
-            double r_err = r - pallette_linear[new_pixel_index][0];
-            double g_err = g - pallette_linear[new_pixel_index][1];
-            double b_err = b - pallette_linear[new_pixel_index][2];
+            double r_err = r - pallette_linear[new_pixel_index].r;
+            double g_err = g - pallette_linear[new_pixel_index].g;
+            double b_err = b - pallette_linear[new_pixel_index].b;
 
             int tmp_x = x + x_step;
             int tmp_y = y;
@@ -128,21 +128,4 @@ int floyd_steinberg_dither_linear(const double *const in_linear_data, unsigned c
 
     free(tmp_linear_data);
     return 0;
-}
-
-int get_closest_color_index_linear(double r, double g, double b) {
-    int closest_idx = -1;
-    double closest_dis = -1.0;
-    for (int i = 0; i < 6; ++i) {
-        double dr = r - pallette_linear[i][0];
-        double dg = g - pallette_linear[i][1];
-        double db = b - pallette_linear[i][2];
-        double distance = dr * dr + dg * dg + db * db;
-        if (closest_dis < 0 || distance < closest_dis) {
-            closest_dis = distance;
-            closest_idx = i;
-        }
-    }
-
-    return closest_idx;
 }

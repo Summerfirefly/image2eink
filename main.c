@@ -11,19 +11,22 @@
 
 int main(int argc, char *argv[]) {
     const char *out_suffix = "_out.bmp";
-    init_pallette();
-
     int width = -1;
     int height = -1;
+    int pallette_inited = 0;
 
     int opt;
-    while ((opt = getopt(argc, argv, "w:h:")) != -1) {
+    while ((opt = getopt(argc, argv, "w:h:p:")) != -1) {
         switch (opt) {
             case 'w':
                 width = atoi(optarg);
                 break;
             case 'h':
                 height = atoi(optarg);
+                break;
+            case 'p':
+                init_pallette(optarg);
+                pallette_inited = 1;
                 break;
             case '?':
                 return 1;
@@ -32,9 +35,16 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (width * height <= 0 || (width < 0 && height < 0)) {
+    if (width * height <= 0) {
         printf("Invalid target size: %d x %d\n", width, height);
         return 1;
+    } else if (width < 0 && height < 0) {
+        width = 800;
+        height = 480;
+    }
+
+    if (!pallette_inited) {
+        init_pallette("dwyrbg");
     }
 
     for (int i = optind; i < argc; ++i) {
