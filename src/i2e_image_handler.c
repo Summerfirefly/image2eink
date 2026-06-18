@@ -64,7 +64,6 @@ int floyd_steinberg_dither_linear(const double *const in_linear_data, unsigned c
                                   int height) {
     double *tmp_linear_data = (double *)malloc(width * height * 3 * sizeof(double));
     if (tmp_linear_data == NULL) {
-        printf("Failed to allocate memory for Floyed-Steinberg dither\n");
         return 1;
     }
 

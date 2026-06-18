@@ -6,7 +6,6 @@
 #include <stb/stb_image_write.h>
 
 #include "i2e_image_handler.h"
-#include "i2e_options.h"
 #include "i2e_pallette.h"
 #include "i2e_utils.h"
 
@@ -14,7 +13,31 @@ int main(int argc, char *argv[]) {
     const char *out_suffix = "_out.bmp";
     init_pallette();
 
-    for (int i = 1; i < argc; ++i) {
+    int width = -1;
+    int height = -1;
+
+    int opt;
+    while ((opt = getopt(argc, argv, "w:h:")) != -1) {
+        switch (opt) {
+            case 'w':
+                width = atoi(optarg);
+                break;
+            case 'h':
+                height = atoi(optarg);
+                break;
+            case '?':
+                return 1;
+            default:
+                break;
+        }
+    }
+
+    if (width * height <= 0 || (width < 0 && height < 0)) {
+        printf("Invalid target size: %d x %d\n", width, height);
+        return 1;
+    }
+
+    for (int i = optind; i < argc; ++i) {
         if (is_filename_suffix_eq(argv[i], out_suffix)) {
             continue;
         }
@@ -22,25 +45,20 @@ int main(int argc, char *argv[]) {
         if (access(argv[i], F_OK) == 0) {
             if (is_filename_suffix_eq(argv[i], ".png") || is_filename_suffix_eq(argv[i], ".jpg") ||
                 is_filename_suffix_eq(argv[i], ".jpeg") || is_filename_suffix_eq(argv[i], ".bmp")) {
-                printf("Processing image: %s\n", argv[i]);
                 double *image_data =
-                    (double *)malloc(sizeof(double) * I2E_EINK_WIDTH * I2E_EINK_HEIGHT * 3);
-                int err = load_image_data_linear(
-                    argv[i],
-                    image_data,
-                    I2E_EINK_WIDTH,
-                    I2E_EINK_HEIGHT
-                );
-
-                if (err != 0) {
+                    (double *)malloc(sizeof(double) * width * height * 3);
+                if (load_image_data_linear(argv[i], image_data, width, height) != 0) {
                     free(image_data);
                     continue;
                 }
 
-                printf("Image loaded: %s\n", argv[i]);
-
-                unsigned char *srgb_out_data = (unsigned char *)malloc(sizeof(unsigned char) * I2E_EINK_WIDTH * I2E_EINK_HEIGHT * 3);
-                floyd_steinberg_dither_linear(image_data, srgb_out_data, I2E_EINK_WIDTH, I2E_EINK_HEIGHT);
+                unsigned char *srgb_out_data = (unsigned char *)malloc(sizeof(unsigned char) * width * height * 3);
+                if (floyd_steinberg_dither_linear(image_data, srgb_out_data, width, height) != 0) {
+                    printf("[Fail] %s\n", argv[i]);
+                    free(image_data);
+                    free(srgb_out_data);
+                    continue;
+                }
 
                 char *file_ext_start = strrchr(argv[i], '.');
                 size_t out_path_len = 0;
@@ -60,11 +78,11 @@ int main(int argc, char *argv[]) {
 
                 snprintf(out_path + out_path_len - out_suffix_len, out_suffix_len + 1, "%s", out_suffix);
 
-                stbi_write_bmp(out_path, I2E_EINK_WIDTH, I2E_EINK_HEIGHT, 3, srgb_out_data);
+                stbi_write_bmp(out_path, width, height, 3, srgb_out_data);
                 free(image_data);
                 free(srgb_out_data);
 
-                printf("Image processed: %s\n", argv[i]);
+                printf("[Done] %s\n", argv[i]);
             }
         }
     }
