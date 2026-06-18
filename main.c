@@ -89,6 +89,7 @@ int main(int argc, char *argv[]) {
                 snprintf(out_path + out_path_len - out_suffix_len, out_suffix_len + 1, "%s", out_suffix);
 
                 stbi_write_bmp(out_path, width, height, 3, srgb_out_data);
+                free(out_path);
                 free(image_data);
                 free(srgb_out_data);
 
