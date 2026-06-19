@@ -18,10 +18,11 @@ int main(int argc, char *argv[]) {
     int width = -1;
     int height = -1;
     int out_bin_file = 0;
+    int rotate_type = 0;
     char *colour_set = "dwyrabg";
 
     int opt;
-    while ((opt = getopt(argc, argv, "w:h:p:b")) != -1) {
+    while ((opt = getopt(argc, argv, "w:h:p:br:")) != -1) {
         switch (opt) {
             case 'w':
                 width = atoi(optarg);
@@ -36,6 +37,13 @@ int main(int argc, char *argv[]) {
                 out_suffix = bin_suffix;
                 out_bin_file = 1;
                 break;
+            case 'r':
+                rotate_type = atoi(optarg);
+                if (rotate_type < 0 || rotate_type > 3) {
+                    printf("Invalid rotate type: %d\n", rotate_type);
+                    return 1;
+                }
+                break;
             case '?':
                 return 1;
             default:
@@ -49,6 +57,13 @@ int main(int argc, char *argv[]) {
     } else if (width < 0 && height < 0) {
         width = 800;
         height = 480;
+    }
+
+    if (rotate_type == 1 || rotate_type == 3) {
+        // Rotate canvas first then rotate back when output
+        int tmp = width;
+        width = height;
+        height = tmp;
     }
 
     init_pallette(colour_set);
@@ -94,10 +109,12 @@ int main(int argc, char *argv[]) {
 
                 snprintf(out_path + out_path_len - out_suffix_len, out_suffix_len + 1, "%s", out_suffix);
 
+                int new_w = width, new_h = height;
+                rotate_image(srgb_out_data, &new_w, &new_h, rotate_type);
                 if (out_bin_file) {
-                    write_bincode_file(out_path, srgb_out_data, width, height);
+                    write_bincode_file(out_path, srgb_out_data, new_w, new_h);
                 } else {
-                    stbi_write_bmp(out_path, width, height, 3, srgb_out_data);
+                    stbi_write_bmp(out_path, new_w, new_h, 3, srgb_out_data);
                 }
 
                 free(out_path);

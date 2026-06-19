@@ -2,6 +2,8 @@
 
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "i2e_pallette.h"
 #include "stb_import.h"
@@ -127,5 +129,57 @@ int floyd_steinberg_dither_linear(const double *const in_linear_data, unsigned c
     }
 
     free(tmp_linear_data);
+    return 0;
+}
+
+int rotate_image(unsigned char *const image_data, int *width, int *height, const int rotate_type) {
+    if (rotate_type == 0) {
+        return 0;
+    }
+
+    if (rotate_type > 3 || rotate_type < 0) {
+        return 1;
+    }
+
+    unsigned char *tmp_image_data = (unsigned char *)malloc((*width) * (*height) * 3);
+    int nw, nh;
+    for (int y = 0; y < *height; ++y) {
+        for (int x = 0; x < *width; ++x) {
+            int nx, ny;
+            switch (rotate_type) {
+                case 1:
+                    nx = -y + (*height) - 1;
+                    ny = x;
+                    nw = *height;
+                    nh = *width;
+                    break;
+                case 2:
+                    nx = -x + (*width) - 1;
+                    ny = -y + (*height) - 1;
+                    nw = *width;
+                    nh = *height;
+                    break;
+                case 3:
+                    nx = y;
+                    ny = -x + (*width) - 1;
+                    nw = *height;
+                    nh = *width;
+                    break;
+                default:
+                    break;
+            }
+
+            int offset = (x + y * (*width)) * 3;
+            int new_offset = (nx + ny * nw) * 3;
+            tmp_image_data[new_offset] = image_data[offset];
+            tmp_image_data[new_offset + 1] = image_data[offset + 1];
+            tmp_image_data[new_offset + 2] = image_data[offset + 2];
+        }
+    }
+
+    memcpy(image_data, tmp_image_data, (*width) * (*height) * 3);
+    free(tmp_image_data);
+    *width = nw;
+    *height = nh;
     return 0;
 }
