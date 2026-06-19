@@ -5,18 +5,23 @@
 #include <unistd.h>
 #include <stb/stb_image_write.h>
 
+#include "i2e_bin_write.h"
 #include "i2e_image_handler.h"
 #include "i2e_pallette.h"
 #include "i2e_utils.h"
 
 int main(int argc, char *argv[]) {
-    const char *out_suffix = "_out.bmp";
+    const char *bin_suffix = ".bin";
+    const char *preview_suffix = "_out.bmp";
+    const char *out_suffix = preview_suffix;
+
     int width = -1;
     int height = -1;
-    int pallette_inited = 0;
+    int out_bin_file = 0;
+    char *colour_set = "dwyrabg";
 
     int opt;
-    while ((opt = getopt(argc, argv, "w:h:p:")) != -1) {
+    while ((opt = getopt(argc, argv, "w:h:p:b")) != -1) {
         switch (opt) {
             case 'w':
                 width = atoi(optarg);
@@ -25,8 +30,11 @@ int main(int argc, char *argv[]) {
                 height = atoi(optarg);
                 break;
             case 'p':
-                init_pallette(optarg);
-                pallette_inited = 1;
+                colour_set = optarg;
+                break;
+            case 'b':
+                out_suffix = bin_suffix;
+                out_bin_file = 1;
                 break;
             case '?':
                 return 1;
@@ -43,12 +51,10 @@ int main(int argc, char *argv[]) {
         height = 480;
     }
 
-    if (!pallette_inited) {
-        init_pallette("dwyrbg");
-    }
+    init_pallette(colour_set);
 
     for (int i = optind; i < argc; ++i) {
-        if (is_filename_suffix_eq(argv[i], out_suffix)) {
+        if (is_filename_suffix_eq(argv[i], preview_suffix) || is_filename_suffix_eq(argv[i], bin_suffix)) {
             continue;
         }
 
@@ -88,7 +94,12 @@ int main(int argc, char *argv[]) {
 
                 snprintf(out_path + out_path_len - out_suffix_len, out_suffix_len + 1, "%s", out_suffix);
 
-                stbi_write_bmp(out_path, width, height, 3, srgb_out_data);
+                if (out_bin_file) {
+                    write_bincode_file(out_path, srgb_out_data, width, height);
+                } else {
+                    stbi_write_bmp(out_path, width, height, 3, srgb_out_data);
+                }
+
                 free(out_path);
                 free(image_data);
                 free(srgb_out_data);

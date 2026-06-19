@@ -4,13 +4,13 @@
 #include <stddef.h>
 #include <string.h>
 
-#define COLOUR_NUM_MAX 6
 rgb_t pallette[COLOUR_NUM_MAX];
 rgb_linear_t pallette_linear[COLOUR_NUM_MAX];
+int pallette_bincode[COLOUR_NUM_MAX];
 
 int colour_num = 0;
 
-void add_colour_to_pallette(int index, rgb_t colour) {
+void add_colour_to_pallette(int index, int bincode, rgb_t colour) {
     if (index < COLOUR_NUM_MAX) {
         pallette[index].r = colour.r;
         pallette[index].g = colour.g;
@@ -19,6 +19,8 @@ void add_colour_to_pallette(int index, rgb_t colour) {
         pallette_linear[index].r = convert_srgb_to_linear(colour.r);
         pallette_linear[index].g = convert_srgb_to_linear(colour.g);
         pallette_linear[index].b = convert_srgb_to_linear(colour.b);
+
+        pallette_bincode[index] = bincode;
     }
 }
 
@@ -35,22 +37,22 @@ void init_pallette(const char *colour_set) {
     for (size_t i = 0; i < strlen(colour_set); ++i) {
         switch (colour_set[i]) {
             case 'd':
-                add_colour_to_pallette(colour_num++, (rgb_t){0, 0, 0});
+                add_colour_to_pallette(colour_num++, i, (rgb_t){0, 0, 0});
                 break;
             case 'w':
-                add_colour_to_pallette(colour_num++, (rgb_t){255, 255, 255});
+                add_colour_to_pallette(colour_num++, i, (rgb_t){255, 255, 255});
                 break;
             case 'r':
-                add_colour_to_pallette(colour_num++, (rgb_t){255, 0, 0});
+                add_colour_to_pallette(colour_num++, i, (rgb_t){255, 0, 0});
                 break;
             case 'g':
-                add_colour_to_pallette(colour_num++, (rgb_t){0, 255, 0});
+                add_colour_to_pallette(colour_num++, i, (rgb_t){0, 255, 0});
                 break;
             case 'b':
-                add_colour_to_pallette(colour_num++, (rgb_t){0, 0, 255});
+                add_colour_to_pallette(colour_num++, i, (rgb_t){0, 0, 255});
                 break;
             case 'y':
-                add_colour_to_pallette(colour_num++, (rgb_t){255, 255, 0});
+                add_colour_to_pallette(colour_num++, i, (rgb_t){255, 255, 0});
                 break;
             default:
                 break;
@@ -77,4 +79,8 @@ int get_closest_color_index_linear(double r, double g, double b) {
     }
 
     return closest_idx;
+}
+
+int get_colour_num(void) {
+    return colour_num;
 }
