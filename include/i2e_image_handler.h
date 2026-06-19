@@ -4,7 +4,7 @@
 #include <stddef.h>
 
 int floyd_steinberg_dither_linear(const double *const in_linear_data, unsigned char *const out_srgb_data, int width, int height);
-int load_image_data_linear(const char *path, double *out_image_data, size_t target_width, size_t target_height);
+int load_image_data_linear(const char *path, double *out_image_data, int target_width, int target_height);
 int rotate_image(unsigned char *const image_data, int *width, int *height, const int rotate_type);
 
 #endif /* I2E_IMAGE_HANDLER_H */

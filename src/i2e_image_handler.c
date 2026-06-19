@@ -1,14 +1,13 @@
 #include "i2e_image_handler.h"
 
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "i2e_pallette.h"
 #include "stb_import.h"
 
-int load_image_data_linear(const char *path, double *out_image_data, size_t target_width, size_t target_height) {
+int load_image_data_linear(const char *path, double *out_image_data, int target_width, int target_height) {
     if (out_image_data == NULL) {
         return 1;
     }
@@ -25,9 +24,9 @@ int load_image_data_linear(const char *path, double *out_image_data, size_t targ
     int resize_h = 0;
     if (radio > target_radio) {
         resize_w = target_width;
-        resize_h = (size_t)((double)target_width / (double)width * (double)height);
+        resize_h = (int)((double)target_width / (double)width * (double)height);
     } else {
-        resize_w = (size_t)((double)target_height / (double)height * (double)width);
+        resize_w = (int)((double)target_height / (double)height * (double)width);
         resize_h = target_height;
     }
 
@@ -39,7 +38,7 @@ int load_image_data_linear(const char *path, double *out_image_data, size_t targ
         return 1;
     }
 
-    for (size_t i = 0; i < target_width * target_height * 3; ++i) {
+    for (int i = 0; i < target_width * target_height * 3; ++i) {
         out_image_data[i] = 1.0;
     }
 
@@ -145,7 +144,7 @@ int rotate_image(unsigned char *const image_data, int *width, int *height, const
     int nw, nh;
     for (int y = 0; y < *height; ++y) {
         for (int x = 0; x < *width; ++x) {
-            int nx, ny;
+            int nx = x, ny = y;
             switch (rotate_type) {
                 case 1:
                     nx = -y + (*height) - 1;
