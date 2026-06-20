@@ -25,9 +25,13 @@ void write_bincode_file(const char *filepath, const unsigned char *image_data, i
     }
 
     for (int j = 0; j < height; ++j) {
-        for (int i = 0; i < width; ++i) {
+        for (int i = 0; i < width; i += 2) {
             const unsigned char *data_index = image_data + ((i + j * width) * 3);
             int bincode = get_bincode_from_rgb(data_index[0], data_index[1], data_index[2]);
+            if (i + 1 < width) {
+                bincode = (bincode << 4) + get_bincode_from_rgb(data_index[3], data_index[4], data_index[5]);
+            }
+
             fwrite(&bincode, 1, 1, binfile);
         }
     }
