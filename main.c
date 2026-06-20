@@ -1,5 +1,4 @@
 #include <stb/stb_image.h>
-#include <stb/stb_image_write.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -7,7 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "i2e_bin_write.h"
+#include "i2e_image_write.h"
 #include "i2e_image_handler.h"
 #include "i2e_pallette.h"
 #include "i2e_utils.h"
@@ -64,6 +63,7 @@ int main(int argc, char *argv[]) {
     }
 
     init_pallette(colour_set);
+    init_image_handler(width, height);
 
     for (int i = optind; i < argc; ++i) {
         if (is_filename_suffix_eq(argv[i], preview_suffix) || is_filename_suffix_eq(argv[i], bin_suffix)) {
@@ -82,16 +82,10 @@ int main(int argc, char *argv[]) {
                     }
                 }
 
-                int w = width, h = height;
-                if (rotate_type == 1 || rotate_type == 3) {
-                    // Rotate canvas first then rotate back when output
-                    w = height;
-                    h = width;
-                }
-
-                double *image_data = (double *)malloc(sizeof(double) * w * h * 3);
-                if (load_image_data_linear(argv[i], image_data, w, h) != 0) {
-                    free(image_data);
+                int w, h;
+                double *image_data = load_image_data_linear(argv[i], &w, &h);
+                if (image_data == NULL) {
+                    printf("Failed to load image: %s\n", argv[i]);
                     continue;
                 }
 
@@ -102,6 +96,8 @@ int main(int argc, char *argv[]) {
                     free(srgb_out_data);
                     continue;
                 }
+
+                free(image_data);
 
                 char *file_ext_start = strrchr(argv[i], '.');
                 size_t out_path_len = 0;
@@ -122,16 +118,34 @@ int main(int argc, char *argv[]) {
                 snprintf(out_path + out_path_len - out_suffix_len, out_suffix_len + 1, "%s", out_suffix);
 
                 rotate_image(srgb_out_data, &w, &h, rotate_type);
+
+                unsigned char *out_image_data = (unsigned char *)malloc(sizeof(unsigned char *) * target_width * target_height * 3);
+                memset(out_image_data, 255, target_width * target_height * 3);
+
+                if (w == target_width) {
+                    int start_offset = w * ((target_height - h) / 2) * 3;
+                    for (int i = 0; i < w * h * 3; ++i) {
+                        out_image_data[start_offset + i] = srgb_out_data[i];
+                    }
+                } else if (h == target_height) {
+                    int col_offset = (target_width - w) / 2 * 3;
+                    for (int row = 0; row < h; ++row) {
+                        for (int col = 0; col < w * 3; ++col) {
+                            int offset = col_offset + row * target_width * 3;
+                            out_image_data[offset + col] = srgb_out_data[row * w * 3 + col];
+                        }
+                    }
+                }
+
+                free(srgb_out_data);
+
                 if (out_bin_file) {
-                    write_bincode_file(out_path, srgb_out_data, w, h);
+                    write_bincode_file(out_path, out_image_data, target_width, target_height);
                 } else {
-                    stbi_write_bmp(out_path, w, h, 3, srgb_out_data);
+                    write_preview_file(out_path, out_image_data, target_width, target_height);
                 }
 
                 free(out_path);
-                free(image_data);
-                free(srgb_out_data);
-
                 printf("[Done] %s\n", argv[i]);
             }
         }

@@ -1,5 +1,6 @@
 #include "i2e_image_handler.h"
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,58 +8,46 @@
 #include "i2e_pallette.h"
 #include "stb_import.h"
 
-int load_image_data_linear(const char *path, double *out_image_data, int target_width, int target_height) {
-    if (out_image_data == NULL) {
-        return 1;
-    }
+static void get_resize_size(const int width, const int height, int *resize_w, int *resize_h);
 
-    int width, height, channels;
-    unsigned char *image_data = stbi_load(path, &width, &height, &channels, 3);
+int target_width;
+int target_height;
+
+void init_image_handler(int width, int height) {
+    if (width > 0 || height > 0) {
+        target_width = width;
+        target_height = height;
+    }
+}
+
+// Return a malloc point and need free manually
+double * load_image_data_linear(const char *path, int *width, int *height) {
+    int w, h, c;
+    unsigned char *image_data = stbi_load(path, &w, &h, &c, 3);
     if (image_data == NULL) {
-        return 1;
+        return NULL;
     }
 
-    double radio = (double)width / (double)height;
-    double target_radio = (double)target_width / (double)target_height;
-    int resize_w = 0;
-    int resize_h = 0;
-    if (radio > target_radio) {
-        resize_w = target_width;
-        resize_h = (int)((double)target_width / (double)width * (double)height);
-    } else {
-        resize_w = (int)((double)target_height / (double)height * (double)width);
-        resize_h = target_height;
-    }
-
+    int resize_w, resize_h;
+    get_resize_size(w, h, &resize_w, &resize_h);
     unsigned char *temp_image_data =
-        stbir_resize_uint8_srgb(image_data, width, height, 0, NULL, resize_w, resize_h, 0, STBIR_RGB);
+        stbir_resize_uint8_srgb(image_data, w, h, 0, NULL, resize_w, resize_h, 0, STBIR_RGB);
     stbi_image_free(image_data);
 
     if (temp_image_data == NULL) {
-        return 1;
+        return NULL;
     }
 
-    for (int i = 0; i < target_width * target_height * 3; ++i) {
-        out_image_data[i] = 1.0;
-    }
-
-    if (resize_w == target_width) {
-        int start_offset = resize_w * ((target_height - resize_h) / 2) * 3;
-        for (int i = 0; i < resize_w * resize_h * 3; ++i) {
-            out_image_data[start_offset + i] = convert_srgb_to_linear(temp_image_data[i]);
-        }
-    } else if (resize_h == target_height) {
-        int col_offset = (target_width - resize_w) / 2 * 3;
-        for (int row = 0; row < resize_h; ++row) {
-            for (int col = 0; col < resize_w * 3; ++col) {
-                int offset = col_offset + row * target_width * 3;
-                out_image_data[offset + col] = convert_srgb_to_linear(temp_image_data[row * resize_w * 3 + col]);
-            }
-        }
+    double *out_image_data = (double *)malloc(sizeof(double) * resize_w * resize_h * 3);
+    for (int i = 0; i < resize_w * resize_h * 3; ++i) {
+        out_image_data[i] = convert_srgb_to_linear(temp_image_data[i]);
     }
 
     free(temp_image_data);
-    return 0;
+
+    *width = resize_w;
+    *height = resize_h;
+    return out_image_data;
 }
 
 int floyd_steinberg_dither_linear(const double *const in_linear_data, unsigned char *const out_srgb_data, int width,
@@ -181,4 +170,30 @@ int rotate_image(unsigned char *const image_data, int *width, int *height, const
     *width = nw;
     *height = nh;
     return 0;
+}
+
+static void get_resize_size(const int width, const int height, int *resize_w, int *resize_h) {
+    int w = width, h = height;
+    bool rotate = (target_width - target_height) * (width - height) < 0;
+    if (rotate) {
+        int tmp = w;
+        w = h;
+        h = tmp;
+    }
+
+    double radio = (double)w / (double)h;
+    double target_radio = (double)target_width / (double)target_height;
+    if (radio > target_radio) {
+        *resize_w = target_width;
+        *resize_h = (int)((double)target_width / (double)w * (double)h);
+    } else {
+        *resize_w = (int)((double)target_height / (double)h * (double)w);
+        *resize_h = target_height;
+    }
+
+    if (rotate) {
+        int tmp = *resize_w;
+        *resize_w = *resize_h;
+        *resize_h = tmp;
+    }
 }

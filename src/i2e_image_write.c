@@ -1,5 +1,6 @@
-#include "i2e_bin_write.h"
+#include "i2e_image_write.h"
 
+#include <stb/stb_image_write.h>
 #include <stdio.h>
 #include "i2e_pallette.h"
 
@@ -38,4 +39,8 @@ void write_bincode_file(const char *filepath, const unsigned char *image_data, i
 
     fflush(binfile);
     fclose(binfile);
+}
+
+void write_preview_file(const char *filepath, const unsigned char *image_data, int width, int height) {
+    stbi_write_bmp(filepath, width, height, 3, image_data);
 }
