@@ -110,9 +110,9 @@ int main(int argc, char *argv[]) {
 
                 char *out_path = (char *)malloc(sizeof(char) * (out_path_len + 1));
                 if (file_ext_start == NULL) {
-                    strlcpy(out_path, argv[i], strlen(argv[i]) + 1);
+                    strncpy(out_path, argv[i], strlen(argv[i]) + 1);
                 } else {
-                    strlcpy(out_path, argv[i], file_ext_start - argv[i] + 1);
+                    strncpy(out_path, argv[i], file_ext_start - argv[i] + 1);
                 }
 
                 snprintf(out_path + out_path_len - out_suffix_len, out_suffix_len + 1, "%s", out_suffix);
