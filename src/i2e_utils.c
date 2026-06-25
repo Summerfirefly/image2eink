@@ -1,6 +1,12 @@
 #include "i2e_utils.h"
 
+#include <malloc.h>
+#include <stdio.h>
 #include <string.h>
+
+const char *const bin_suffix = ".bin";
+const char *const preview_suffix = "_out.bmp";
+const char *out_suffix = preview_suffix;
 
 int get_base_dir_name(const char *path, char *out_dirname, size_t dirname_length, char *out_basename,
                       size_t basename_length) {
@@ -52,4 +58,29 @@ int is_filename_suffix_eq(const char *path, const char *extension) {
 
     const char *path_ext = path + path_len - extension_len;
     return strcmp(path_ext, extension) == 0;
+}
+
+char * generate_output_path(const char *path) {
+    if (path == NULL) {
+        return NULL;
+    }
+
+    char *file_ext_start = strrchr(path, '.');
+    size_t out_path_len = 0;
+    size_t out_suffix_len = strlen(out_suffix);
+    if (file_ext_start == NULL) {
+        out_path_len = strlen(path) + out_suffix_len;
+    } else {
+        out_path_len = file_ext_start - path + out_suffix_len;
+    }
+
+    char *out_path = (char *)malloc(sizeof(char) * (out_path_len + 1));
+    if (file_ext_start == NULL) {
+        strncpy(out_path, path, strlen(path) + 1);
+    } else {
+        strncpy(out_path, path, file_ext_start - path + 1);
+    }
+
+    snprintf(out_path + out_path_len - out_suffix_len, out_suffix_len + 1, "%s", out_suffix);
+    return out_path;
 }

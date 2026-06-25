@@ -1,6 +1,5 @@
 #include "i2e_image_handler.h"
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,14 +9,65 @@
 
 static void get_resize_size(const int width, const int height, int *resize_w, int *resize_h);
 
-int target_width;
-int target_height;
+static int target_width;
+static int target_height;
 
 void init_image_handler(int width, int height) {
     if (width > 0 || height > 0) {
         target_width = width;
         target_height = height;
     }
+}
+
+unsigned char * process_image(const char *filepath, bool auto_rotate, int rotate_type) {
+    if (auto_rotate) {
+        int w, h, c;
+        if (stbi_info(filepath, &w, &h, &c)) {
+            rotate_type = (target_width - target_height) * (w - h) < 0 ? 1 : 0;
+        } else {
+            rotate_type = 0;
+        }
+    }
+
+    int w, h;
+    double *image_data = load_image_data_linear(filepath, &w, &h);
+    if (image_data == NULL) {
+        printf("Failed to load image: %s\n", filepath);
+        return NULL;
+    }
+
+    unsigned char *srgb_out_data = (unsigned char *)malloc(sizeof(unsigned char) * w * h * 3);
+    if (floyd_steinberg_dither_linear(image_data, srgb_out_data, w, h) != 0) {
+        printf("[Fail] %s\n", filepath);
+        free(image_data);
+        free(srgb_out_data);
+        return NULL;
+    }
+
+    free(image_data);
+
+    rotate_image(srgb_out_data, &w, &h, rotate_type);
+
+    unsigned char *out_image_data = (unsigned char *)malloc(sizeof(unsigned char *) * target_width * target_height * 3);
+    memset(out_image_data, 255, target_width * target_height * 3);
+
+    if (w == target_width) {
+        int start_offset = w * ((target_height - h) / 2) * 3;
+        for (int i = 0; i < w * h * 3; ++i) {
+            out_image_data[start_offset + i] = srgb_out_data[i];
+        }
+    } else if (h == target_height) {
+        int col_offset = (target_width - w) / 2 * 3;
+        for (int row = 0; row < h; ++row) {
+            for (int col = 0; col < w * 3; ++col) {
+                int offset = col_offset + row * target_width * 3;
+                out_image_data[offset + col] = srgb_out_data[row * w * 3 + col];
+            }
+        }
+    }
+
+    free(srgb_out_data);
+    return out_image_data;
 }
 
 // Return a malloc point and need free manually
