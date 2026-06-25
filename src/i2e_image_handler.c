@@ -19,13 +19,13 @@ void init_image_handler(int width, int height) {
     }
 }
 
-unsigned char * process_image(const char *filepath, bool auto_rotate, int rotate_type) {
+unsigned char * process_image(const char *filepath, bool auto_rotate, rotate_type_t rotate_type) {
     if (auto_rotate) {
         int w, h, c;
         if (stbi_info(filepath, &w, &h, &c)) {
-            rotate_type = (target_width - target_height) * (w - h) < 0 ? 1 : 0;
+            rotate_type = (target_width - target_height) * (w - h) < 0 ? CLOCKWISE_90 : NO_ROTATE;
         } else {
-            rotate_type = 0;
+            rotate_type = NO_ROTATE;
         }
     }
 
@@ -170,8 +170,8 @@ int floyd_steinberg_dither_linear(const double *const in_linear_data, unsigned c
     return 0;
 }
 
-int rotate_image(unsigned char *const image_data, int *width, int *height, const int rotate_type) {
-    if (rotate_type == 0) {
+int rotate_image(unsigned char *const image_data, int *width, int *height, const rotate_type_t rotate_type) {
+    if (rotate_type == NO_ROTATE) {
         return 0;
     }
 
@@ -185,19 +185,19 @@ int rotate_image(unsigned char *const image_data, int *width, int *height, const
         for (int x = 0; x < *width; ++x) {
             int nx = x, ny = y;
             switch (rotate_type) {
-                case 1:
+                case CLOCKWISE_90:
                     nx = -y + (*height) - 1;
                     ny = x;
                     nw = *height;
                     nh = *width;
                     break;
-                case 2:
+                case CLOCKWISE_180:
                     nx = -x + (*width) - 1;
                     ny = -y + (*height) - 1;
                     nw = *width;
                     nh = *height;
                     break;
-                case 3:
+                case CLOCKWISE_270:
                     nx = y;
                     ny = -x + (*width) - 1;
                     nw = *height;

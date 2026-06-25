@@ -12,6 +12,7 @@ add_project_link_arguments(
 
 srcfiles = files(
     'main.c',
+    'src/i2e_config.c',
     'src/i2e_image_write.c',
     'src/i2e_image_handler.c',
     'src/i2e_pallette.c',
